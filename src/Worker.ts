@@ -3,7 +3,7 @@ import { Queue } from "./Queue";
 
 export class Worker {
 
-    private static queues: Array<Queue> = [{ key: 'default', timeCycle: 1000, isRunning: false }];
+    private static queues: Array<Queue> = [{ key: 'default', timeCycle: 5000, isRunning: false }];
     private static providers = {};
 
     public static withProviders(providers: Array<SchedulableTask> | object) {
