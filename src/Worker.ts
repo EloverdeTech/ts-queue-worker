@@ -32,7 +32,7 @@ export class Worker {
     public static addTask(task: SchedulableTask) {
 
         let taskToStorage = task.serialize();
-        let queueName = 'queue.' + task.queue;
+        let queueName = task.queue;
 
         let queue = this.getTasks(queueName);
         let newQueue;
