@@ -51,6 +51,14 @@ export class Worker {
 
     }
 
+    public static removeTask(index, queueName) {
+        
+        let queue: Array<any> = this.getTasks(queueName);
+        queue.splice(index, 1);
+
+        this.saveTasks(queueName, queue);
+    }
+
 
     public static up() {
 

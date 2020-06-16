@@ -6,9 +6,22 @@ import { assert } from 'chai';
 describe('Worker', () => {
 
     beforeEach(() => {
+        localStorage.clear(); 
     });
 
     afterEach(() => {
+    });
+
+    it('can remove task', (done) => {
+        
+        let task = new SampleSchedulableTask('default');
+
+        Worker.removeTask(0, 'default');
+
+        assert.lengthOf(Worker.getTasks('default'), 0);
+
+        done();
+
     });
 
 
@@ -83,6 +96,8 @@ describe('Worker', () => {
     it('run on the time limit', (done) => {
         done();
     });
+
+   
 
     
 
