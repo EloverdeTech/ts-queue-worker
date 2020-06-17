@@ -34,10 +34,10 @@ export class Worker {
         let taskToStorage = task.serialize();
         let queueName = task.queue;
 
-        let queue = this.getTasks(queueName);
+        let queue = this.getTasks(queueName);   
         let newQueue;
 
-
+        
         if (queue) {
             newQueue = queue;
         } else {
@@ -75,6 +75,8 @@ export class Worker {
                     });
 
                 }, queue.timeCycle)
+            } else {
+                console.error('queue already running')
             }
 
         })
@@ -194,7 +196,7 @@ export class Worker {
     public static stop() {
 
         return new Promise((resolve, reject) => {
-            this.queues.forEach((queue: Queue) => {
+            this.queues.map((queue: Queue) => {
 
                 let recursiveStop = () => {
 
@@ -206,6 +208,7 @@ export class Worker {
                         } else {
                             //Se não estiver executando, para o worker
                             clearInterval(queue.intervalId)
+                            queue.intervalId = undefined;
                             resolve();
                         }
 
