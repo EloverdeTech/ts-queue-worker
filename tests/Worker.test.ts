@@ -16,7 +16,7 @@ describe('Worker', () => {
         
         let task = new SampleSchedulableTask('default');
 
-        Worker.removeTask(0, 'default');
+        Worker.removeTasks([0], 'default');
 
         assert.lengthOf(Worker.getTasks('default'), 0);
 
@@ -67,9 +67,8 @@ describe('Worker', () => {
     it('can get queue', (done) => {
 
         let task = new SampleSchedulableTask('default');
-        Worker.addTask(task);
-
-        assert.equal(Worker.getTasks('default')[0], '{"queue":"default","tries":0,"storageKey":"SampleSchedulableTask","name":"default"}')
+        Worker.addTask(task);   
+        assert.equal(Worker.getTasks('default')[0], '{"id":'+task.id+',"queue":"default","tries":0,"storageKey":"SampleSchedulableTask","name":"default"}')
         
         done();
 

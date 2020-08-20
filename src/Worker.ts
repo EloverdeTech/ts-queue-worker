@@ -37,7 +37,7 @@ export class Worker {
         let queue = this.getTasks(queueName);   
         let newQueue;
 
-        
+
         if (queue) {
             newQueue = queue;
         } else {
@@ -51,12 +51,19 @@ export class Worker {
 
     }
 
-    public static removeTask(index, queueName) {
-        
-        let queue: Array<any> = this.getTasks(queueName);
-        queue.splice(index, 1);
-
-        this.saveTasks(queueName, queue);
+    public static removeTasks(ids: Array<number>, queueName) {
+        return new Promise((resolve, reject) => {
+            
+            let queue: Array<SchedulableTask> = this.getTasks(queueName);
+            
+            ids.forEach((id) => {
+                let taskIndex = queue.findIndex(task => task.id == id);
+                queue.splice(taskIndex, 1);
+            })
+    
+            this.saveTasks(queueName, queue);
+            resolve();
+        });
     }
 
 
@@ -127,7 +134,7 @@ export class Worker {
             queue.isRunning = true;
 
             let taskProvider = this.getProvider(JSON.parse(task).storageKey);
-            let decoratedTask = taskProvider.decorate(JSON.parse(task));
+            let decoratedTask: SchedulableTask = taskProvider.decorate(JSON.parse(task));
 
             if (decoratedTask) {
 
@@ -136,11 +143,12 @@ export class Worker {
                     taskList.splice(0, 1);
 
                     this.saveTasks(decoratedTask.queue, taskList);
+                    
+                    decoratedTask.afterHandle(decoratedTask);   
                     this.afterRun(queue);
                     resolve();
 
                 }).catch((error) => {
-
                     decoratedTask.lastExecuted = new Date();
                     decoratedTask.tries++;
 
@@ -152,7 +160,7 @@ export class Worker {
                     this.saveTasks(decoratedTask.queue, taskList);
 
                     this.addTask(decoratedTask);
-
+                     
                     this.afterRun(queue);
                     reject('taskError');
 

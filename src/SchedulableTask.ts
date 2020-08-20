@@ -2,7 +2,7 @@ import { Queue } from "./Queue";
 import { Worker } from "./Worker";
 
 export abstract class SchedulableTask {
-
+    public id = Date.now();
     public queue = 'default';
     public tries = 0;
     public lastExecuted: Date;
@@ -11,6 +11,8 @@ export abstract class SchedulableTask {
     public storageKey = this.constructor.name;
 
     abstract handle(): Promise<any>;
+
+    abstract afterHandle(data);
 
     public dispatch() {        
         Worker.addTask(this);
