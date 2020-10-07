@@ -1,5 +1,6 @@
 import { SchedulableTask } from "./SchedulableTask";
 import { Queue } from "./Queue";
+import * as localforage  from 'localforage';
 
 export class Worker {
 
@@ -29,15 +30,14 @@ export class Worker {
 
     }
 
-    public static addTask(task: SchedulableTask) {
+    public static async addTask(task: SchedulableTask) {
 
         let taskToStorage = task.serialize();
         let queueName = task.queue;
 
-        let queue = this.getTasks(queueName);   
+        let queue = await this.getTasks(queueName);   
         let newQueue;
-
-
+    
         if (queue) {
             newQueue = queue;
         } else {
@@ -52,9 +52,9 @@ export class Worker {
     }
 
     public static removeTasks(ids: Array<number>, queueName) {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             
-            let queue: Array<SchedulableTask> = this.getTasks(queueName);
+            let queue: Array<SchedulableTask> = await this.getTasks(queueName);
             
             ids.forEach((id) => {
                 let taskIndex = queue.findIndex(task => task.id == id);
@@ -93,13 +93,13 @@ export class Worker {
 
     public static runOnce(queueName = 'default') {
 
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             console.info(queueName + ' - running worker cycle...')
             let queue = this.queues.find((queue => queue.key == queueName));
             if (queue) {
 
-                let taskList = this.getTasks(queueName);
+                let taskList = await this.getTasks(queueName);
 
 
                 //Se não houver um outro ciclo rodando
@@ -138,17 +138,17 @@ export class Worker {
 
             if (decoratedTask) {
 
-                decoratedTask.handle().then((response) => {
+                decoratedTask.handle().then(async (response) => {
 
                     taskList.splice(0, 1);
 
-                    this.saveTasks(decoratedTask.queue, taskList);
+                    await this.saveTasks(decoratedTask.queue, taskList);
                     
                     decoratedTask.afterHandle(decoratedTask);   
                     this.afterRun(queue);
                     resolve();
 
-                }).catch((error) => {
+                }).catch(async (error) => {
                     decoratedTask.lastExecuted = new Date();
                     decoratedTask.tries++;
 
@@ -157,7 +157,7 @@ export class Worker {
                     decoratedTask.errors = decoratedTask.errors.slice(-5);
 
                     taskList.splice(0, 1);
-                    this.saveTasks(decoratedTask.queue, taskList);
+                    await this.saveTasks(decoratedTask.queue, taskList);
 
                     this.addTask(decoratedTask);
                      
@@ -177,15 +177,14 @@ export class Worker {
         queue.isRunning = false;
     }
 
-    public static saveTasks(queueName, queueData: Array<SchedulableTask>) {
+    public static async saveTasks(queueName, queueData: Array<SchedulableTask>) {
         let dataToStorage = JSON.stringify(queueData)
-        localStorage.setItem('queue.' + queueName, dataToStorage);
+        await localforage.setItem('queue.' + queueName, dataToStorage)
     }
 
 
-    public static getTasks(queueName) {
-
-        let queue = localStorage.getItem('queue.' + queueName);
+    public static async getTasks(queueName) {
+        let queue: string | null = await localforage.getItem('queue.' + queueName);
 
         if (queue) {
             let queueParsed = JSON.parse(queue);
@@ -196,7 +195,6 @@ export class Worker {
         }
 
     }
-
 
     /**
      * Derruba o worker

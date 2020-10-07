@@ -1,5 +1,6 @@
 import {SampleSchedulableTask} from './helpers/SampleSchedulableTask';
 import { assert } from 'chai';
+import * as localforage from 'localforage';
 
 describe('SchedulableTask', () => {
 
@@ -41,22 +42,26 @@ describe('SchedulableTask', () => {
         done();       
     });
 
-    it('can dispatch task', (done) => {
-        
-        task.dispatch();
 
-        let storedLocal;
+    it('can dispatch task', function (done) {
+        this.timeout(5000);
+        new Promise(async function (resolve) {
+            let task = new SampleSchedulableTask('default');
+            await task.dispatch();
 
-        if(localStorage.getItem('queue.default')){
-            storedLocal = true; 
-        } else {
-            storedLocal = false;
-        }
-        
-        assert.equal(true, storedLocal);
-
-        done();    
-
+            let storedLocal;
+            const queue = await localforage.getItem('queue.default');
+            
+            if(queue){
+                storedLocal = true; 
+            } else {
+                storedLocal = false;
+            }
+            
+            assert.equal(true, storedLocal);
+          resolve();
+         })
+        .then(done);
     });
 
     it('can handle task', (done) => {

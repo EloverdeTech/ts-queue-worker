@@ -12,16 +12,18 @@ describe('Worker', () => {
     afterEach(() => {
     });
 
-    it('can remove task', (done) => {
-        
-        let task = new SampleSchedulableTask('default');
+    it('can remove task', function (done) {
+        new Promise(async function (resolve) {
+            let task = new SampleSchedulableTask('default');
 
-        Worker.removeTasks([0], 'default');
+            Worker.removeTasks([0], 'default');
+            let tasks = await Worker.getTasks('default');
+                assert.lengthOf(tasks, 0);
 
-        assert.lengthOf(Worker.getTasks('default'), 0);
-
-        done();
-
+          assert.ok(true);
+          resolve();
+         })
+        .then(done);
     });
 
 
@@ -36,9 +38,9 @@ describe('Worker', () => {
         
         setTimeout(() =>{
             
-            Worker.stop().then(()=>{
+            Worker.stop().then(async ()=>{
 
-                assert.exists([], Worker.getTasks('default'));
+                assert.exists([], await Worker.getTasks('default'));
 
                 done();
                 
@@ -66,12 +68,24 @@ describe('Worker', () => {
 
     it('can get queue', (done) => {
 
-        let task = new SampleSchedulableTask('default');
-        Worker.addTask(task);   
-        assert.equal(Worker.getTasks('default')[0], '{"id":'+task.id+',"queue":"default","tries":0,"storageKey":"SampleSchedulableTask","name":"default"}')
         
         done();
 
+    });
+
+    it('can get queue', function (done) {
+        this.timeout(5000);
+        new Promise(async function (resolve) {
+            let task = new SampleSchedulableTask('default');
+            
+            await Worker.addTask(task);   
+            const tasks = await Worker.getTasks('default');
+            
+            assert.equal(tasks[0], '{"id":'+task.id+',"queue":"default","tries":0,"storageKey":"SampleSchedulableTask","name":"default"}')
+    
+          resolve();
+         })
+        .then(done);
     });
 
     it('can run once', (done) => {

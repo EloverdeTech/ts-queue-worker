@@ -1,6 +1,6 @@
 {
   "name": "ts-queue-worker",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "description": "",
   "keywords": [],
   "author": "Eloverde Sistemas",
@@ -25,7 +25,9 @@
     "test": "npm run build-dev && mocha -r mock-local-storage -r ts-node/register tests/**/*.test.ts",
     "dist": "npm install && npm run test && npm publish"
   },
-  "dependencies": {},
+  "dependencies": {
+    "localforage": "^1.9.0"
+  },
   "devDependencies": {
     "@types/chai": "^4.2.11",
     "@types/chai-as-promised": "^7.1.2",

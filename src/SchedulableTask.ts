@@ -14,8 +14,8 @@ export abstract class SchedulableTask {
 
     abstract afterHandle(data);
 
-    public dispatch() {        
-        Worker.addTask(this);
+    public async dispatch() {        
+        await Worker.addTask(this);
     }
 
     public serialize() {
