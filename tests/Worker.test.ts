@@ -88,7 +88,8 @@ describe('Worker', () => {
         .then(done);
     });
 
-    it('can run once', (done) => {
+    it('can run once', function (done) {
+        this.timeout(5000);
 
         let task = new SampleSchedulableTask('default');
         
@@ -99,9 +100,12 @@ describe('Worker', () => {
                 done(); 
     
             }).catch((error) => {
+                console.log(error);
                 assert.equal(true, false);
             });
 
+        }).catch((error) => {
+            console.log(error);
         })
         
     });

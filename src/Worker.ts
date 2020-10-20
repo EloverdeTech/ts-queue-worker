@@ -47,21 +47,28 @@ export class Worker {
 
         newQueue.push(taskToStorage);
 
-        this.saveTasks(task.queue, newQueue);
+        await this.saveTasks(task.queue, newQueue);
 
     }
 
     public static removeTasks(ids: Array<number>, queueName) {
         return new Promise(async (resolve, reject) => {
             
-            let queue: Array<SchedulableTask> = await this.getTasks(queueName);
+            let queue = await this.getTasks(queueName);
             
             ids.forEach((id) => {
-                let taskIndex = queue.findIndex(task => task.id == id);
+                let taskIndex = queue.findIndex(task => {
+                    task.id == id
+                    let taskProvider = this.getProvider(JSON.parse(task).storageKey);
+                    let decoratedTask: SchedulableTask = taskProvider.decorate(JSON.parse(task));
+                    if (decoratedTask.id === id) {
+                        return task;
+                    }
+                });
                 queue.splice(taskIndex, 1);
             })
     
-            this.saveTasks(queueName, queue);
+            await this.saveTasks(queueName, queue);
             resolve();
         });
     }
@@ -107,7 +114,7 @@ export class Worker {
 
                     if (taskList && taskList.length) {
 
-                        this.runTask(queue, taskList[0], taskList).then((response) => {
+                        this.runTask(queue, taskList[0], taskList, queueName).then((response) => {
                             resolve();
                         }).catch((error) => {
                             reject(error);
@@ -126,7 +133,7 @@ export class Worker {
         });
     }
 
-    private static runTask(queue, task, taskList) {
+    private static runTask(queue, task, taskList, queueName) {
 
         return new Promise((resolve, reject) => {
 
@@ -135,14 +142,18 @@ export class Worker {
 
             let taskProvider = this.getProvider(JSON.parse(task).storageKey);
             let decoratedTask: SchedulableTask = taskProvider.decorate(JSON.parse(task));
-
+            
             if (decoratedTask) {
 
                 decoratedTask.handle().then(async (response) => {
 
-                    taskList.splice(0, 1);
+                    let newTaskList = await this.getTasks(queueName);
+                    let taskIndex  = newTaskList.findIndex(listedTask => task === listedTask);
 
-                    await this.saveTasks(decoratedTask.queue, taskList);
+                    console.log(taskIndex);
+                    newTaskList.splice(taskIndex, 1);
+
+                    await this.saveTasks(decoratedTask.queue, newTaskList);
                     
                     decoratedTask.afterHandle(decoratedTask);   
                     this.afterRun(queue);
@@ -156,14 +167,20 @@ export class Worker {
                     decoratedTask.errors.push(JSON.stringify(error, null, 2));;
                     decoratedTask.errors = decoratedTask.errors.slice(-5);
 
-                    taskList.splice(0, 1);
-                    await this.saveTasks(decoratedTask.queue, taskList);
+                    let newTaskList = await this.getTasks(queueName);
+                    let taskIndex  = newTaskList.findIndex(listedTask => task === listedTask);
+                    console.log(taskIndex);
 
-                    this.addTask(decoratedTask);
-                     
+                    newTaskList.splice(taskIndex, 1);
+                    
+                    await this.saveTasks(decoratedTask.queue, newTaskList);
+
+                    await this.addTask(decoratedTask)
+                    
                     this.afterRun(queue);
                     reject('taskError');
-
+                       
+    
                 });
             } else {
                 this.afterRun(queue);
