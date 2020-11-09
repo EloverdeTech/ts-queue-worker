@@ -66,13 +66,6 @@ describe('Worker', () => {
         done();
     });
 
-    it('can get queue', (done) => {
-
-        
-        done();
-
-    });
-
     it('can get queue', function (done) {
         this.timeout(5000);
         new Promise(async function (resolve) {

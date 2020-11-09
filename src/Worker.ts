@@ -6,6 +6,8 @@ export class Worker {
 
     private static queues: Array<Queue> = [{ key: 'default', timeCycle: 5000, isRunning: false }];
     private static providers = {};
+    private static isRunning = false;
+    private static intervalId;
 
     public static withProviders(providers: Array<SchedulableTask> | object) {
         if (Array.isArray(providers)) {
@@ -78,9 +80,9 @@ export class Worker {
 
         this.queues.forEach((queue: Queue) => {
 
-            if (!queue.intervalId) {
+            if (!this.intervalId) {
 
-                queue.intervalId = setInterval(() => {
+                this.intervalId = setInterval(() => {
 
                     this.runOnce(queue.key).then(() => {
                         return 'sucess';
@@ -110,7 +112,7 @@ export class Worker {
 
 
                 //Se não houver um outro ciclo rodando
-                if (!queue.isRunning) {
+                if (!this.isRunning) {
 
                     if (taskList && taskList.length) {
 
@@ -139,6 +141,7 @@ export class Worker {
 
             //Marca o ciclo como em execução
             queue.isRunning = true;
+            this.isRunning = true;
 
             let taskProvider = this.getProvider(JSON.parse(task).storageKey);
             let decoratedTask: SchedulableTask = taskProvider.decorate(JSON.parse(task));
@@ -148,10 +151,23 @@ export class Worker {
                 decoratedTask.handle().then(async (response) => {
 
                     let newTaskList = await this.getTasks(queueName);
-                    let taskIndex  = newTaskList.findIndex(listedTask => task === listedTask);
+                    
+                    let taskIndex = newTaskList.findIndex(listedTask =>  {
+                        let taskProvider = this.getProvider(JSON.parse(listedTask).storageKey);
+                        let newDecoratedTask: SchedulableTask = taskProvider.decorate(JSON.parse(listedTask));
+                        console.log(newDecoratedTask.id);
+                        console.log(decoratedTask.id);
 
-                    console.log(taskIndex);
-                    newTaskList.splice(taskIndex, 1);
+                        if (decoratedTask.id === newDecoratedTask.id) {
+                            return task;
+                        }
+                    });
+
+                    console.log(taskIndex + " sucesso");
+
+                    if (taskIndex != -1) {
+                        newTaskList.splice(taskIndex, 1);
+                    }
 
                     await this.saveTasks(decoratedTask.queue, newTaskList);
                     
@@ -168,10 +184,21 @@ export class Worker {
                     decoratedTask.errors = decoratedTask.errors.slice(-5);
 
                     let newTaskList = await this.getTasks(queueName);
-                    let taskIndex  = newTaskList.findIndex(listedTask => task === listedTask);
-                    console.log(taskIndex);
 
-                    newTaskList.splice(taskIndex, 1);
+                    let taskIndex = newTaskList.findIndex(listedTask =>  {
+                        let taskProvider = this.getProvider(JSON.parse(listedTask).storageKey);
+                        let newDecoratedTask: SchedulableTask = taskProvider.decorate(JSON.parse(listedTask));
+
+                        if (decoratedTask.id === newDecoratedTask.id) {
+                            return task;
+                        }
+                    });
+
+                    console.log(taskIndex + " falha");
+
+                    if (taskIndex != -1) {
+                        newTaskList.splice(taskIndex, 1);
+                    }
                     
                     await this.saveTasks(decoratedTask.queue, newTaskList);
 
@@ -192,6 +219,7 @@ export class Worker {
 
     public static afterRun(queue) {
         queue.isRunning = false;
+        this.isRunning = false;
     }
 
     public static async saveTasks(queueName, queueData: Array<SchedulableTask>) {
@@ -226,12 +254,12 @@ export class Worker {
                     setTimeout(() => {
 
                         //Se estiver rodando um ciclo, espera até acabar
-                        if (queue.isRunning) {
+                        if (this.isRunning) {
                             recursiveStop();
                         } else {
                             //Se não estiver executando, para o worker
-                            clearInterval(queue.intervalId)
-                            queue.intervalId = undefined;
+                            clearInterval(this.intervalId)
+                            this.intervalId = undefined;
                             resolve();
                         }
 
