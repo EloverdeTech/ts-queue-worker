@@ -1,5 +1,4 @@
-import { Queue } from "./Queue";
-import { Worker } from "./Worker";
+import { Worker } from './Worker';
 
 export abstract class SchedulableTask {
     public id = Date.now();
@@ -7,6 +6,7 @@ export abstract class SchedulableTask {
     public tries = 0;
     public lastExecuted: Date;
     public errors: Array<string>;
+    public response;
 
     public storageKey = this.constructor.name;
 
