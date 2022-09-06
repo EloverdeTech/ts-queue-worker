@@ -1,6 +1,7 @@
-import { SchedulableTask } from "./SchedulableTask";
-import { Queue } from "./Queue";
-import * as localforage  from 'localforage';
+import * as localforage from 'localforage';
+
+import { Queue } from './Queue';
+import { SchedulableTask } from './SchedulableTask';
 
 export class Worker {
 
@@ -170,6 +171,8 @@ export class Worker {
                     }
 
                     await this.saveTasks(decoratedTask.queue, newTaskList);
+                    
+                    decoratedTask.response = response;
                     
                     decoratedTask.afterHandle(decoratedTask);   
                     this.afterRun(queue);
